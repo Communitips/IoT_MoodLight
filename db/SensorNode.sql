@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 5.5.57, for debian-linux-gnu (armv7l)
+-- MySQL dump 10.13  Distrib 5.7.19, for Linux (x86_64)
 --
 -- Host: localhost    Database: SensorNode
 -- ------------------------------------------------------
--- Server version	5.5.57-0+deb8u1
+-- Server version	5.7.19-0ubuntu0.16.04.1
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -50,7 +50,7 @@ CREATE TABLE `Temperature` (
   `Node_Number` tinyint(1) unsigned NOT NULL,
   `Time` datetime NOT NULL,
   `Temperature` double NOT NULL,
-  PRIMARY KEY (`Node_Number`)
+  PRIMARY KEY (`Node_Number`,`Time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -60,6 +60,7 @@ CREATE TABLE `Temperature` (
 
 LOCK TABLES `Temperature` WRITE;
 /*!40000 ALTER TABLE `Temperature` DISABLE KEYS */;
+INSERT INTO `Temperature` VALUES (0,'2017-08-26 02:01:10',20),(0,'2017-08-26 02:10:10',24),(0,'2017-08-26 02:19:10',26),(0,'2017-08-26 02:28:10',19),(0,'2017-08-26 02:37:10',20),(1,'2017-08-26 02:01:10',10),(1,'2017-08-26 02:10:10',15),(1,'2017-08-26 02:19:10',12),(1,'2017-08-26 02:28:10',20),(1,'2017-08-26 02:37:10',27);
 /*!40000 ALTER TABLE `Temperature` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -72,4 +73,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-11-30  6:29:57
+-- Dump completed on 2017-09-12 23:21:36
