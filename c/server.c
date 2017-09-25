@@ -171,7 +171,7 @@ int main()
 	memset(&serv_adr,0,sizeof(serv_adr));
 	serv_adr.sin_family = AF_INET;
 	serv_adr.sin_addr.s_addr = inet_addr(INADDR_ANY);
-	serv_adr.sin_port=htons(25002);
+	serv_adr.sin_port=htons(25602);
 
 	//소켓에 주소 등록.
 	if(bind(serv_sock,(struct sockaddr*)&serv_adr,sizeof(serv_adr))==-1)

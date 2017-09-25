@@ -18,7 +18,7 @@ char Database[32];
 
 char DataRow[10][100];
 
-#define HOST_PORT 25601
+#define HOST_PORT 25602
 #define BROADCAST_LIST  5
 char IP[BROADCAST_LIST][] = {
     "192.168.0.2",
@@ -78,9 +78,7 @@ int main(void)
     bzero((char *)&serv_addr, sizeof(serv_addr));
     
     serv_addr.sin_family = AF_INET;
-    //TODO ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-    serv_addr.sin_port = htons(HOST_PORT);          //NEED CHECK
-    //★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    serv_addr.sin_port = htons(HOST_PORT);
 
     int     Select = 0;
     char    DB_Name[][] = {"Temperature", "Humidity", "Light"}
