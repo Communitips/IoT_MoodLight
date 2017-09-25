@@ -95,6 +95,7 @@ var #id = $(#example).val()  /// example이라는 id값을 갖는 태그에 접�
 ```
 
 ## ajax
+js파일 내에서 데이터(data)를 특정 주소(url)로 보내는 방법 get과 post 방식이 있다
 ```js
 var userinfo = {
   username: $("#username").val(), //#username 태그에 접근, valuse를 얻음
