@@ -4,7 +4,7 @@ Communitips에서 제작한 스마트 무드등입니다.
 
 ## 작품 구성
 
-![MoodLight_SensorNode](./img/SensorNode.PNG)
+![MoodLight_SensorNode](./0_1_img/SensorNode.PNG)
 
 ## 구현 내용
 
