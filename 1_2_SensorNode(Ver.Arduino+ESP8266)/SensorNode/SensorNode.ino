@@ -19,13 +19,21 @@ float   dht_temp, dht_humi;
 SoftwareSerial esp8266(ESP_RX, ESP_TX); //RX 11, TX 10
 A_ESP8266 wifi(esp8266);
 
-unsigned char buffer[256];
-
-uint32_t TCP_Receive(void)
+uint32_t TCP_Receive(unsigned char* buf)
 {
-  uint32_t len = wifi.recv(buffer, sizeof(buffer), 1000);
-  if (len > 0)  return 1;
-  else          return 0;
+  unsigned char recv_buf[256];
+  memset(recv_buf, 0x00, sizeof(recv_buf));
+  uint32_t len = wifi.recv(recv_buf, sizeof(recv_buf), 1000);
+
+  if(recv_buf[1] == 0xFF)   return -1;
+
+  if(len > 0)
+  {
+    memcpy(buf, recv_buf, len);
+    return 1;
+  }
+  else    return 0;
+
 }
 
 void TCP_Send(unsigned char key, unsigned char msg_id, unsigned char body_size, unsigned char* body)
@@ -83,7 +91,10 @@ void loop() {
     if (wifi.createTCP(HOST_ADDR, HOST_PORT))
     {
       Serial.print("[4] create tcp ok\r\n");
-      DataNode_Main();
+      if(DataNode_Main())
+      {
+        Serial.print("[!] Retry\r\n");
+      }
     }
     break;
   }
@@ -109,16 +120,16 @@ void MakeFormat(unsigned char format, void* data, unsigned char* buf)
 
 bool isLedOn = true;
 
-void Sense_Proc(unsigned char mode)
+void Sense_Proc(unsigned char mode, unsigned char* buf)
 {
   int i;
   if(err = dht11.read(dht_humi, dht_temp) == 0)
   {
-    MakeFormat(0x01, (void*)&dht_temp, &buffer[3]);
-    MakeFormat(0x01, (void*)&dht_humi, &buffer[7]);
+    MakeFormat(0x01, (void*)&dht_temp, &buf[3]);
+    MakeFormat(0x01, (void*)&dht_humi, &buf[7]);
     
     //send packet
-    TCP_Send(27, 0x03, 8, &buffer[3]);
+    TCP_Send(27, 0x03, 8, &buf[3]);
   }
   else
   {
@@ -139,23 +150,31 @@ void Light_Proc(void)
   // - brightness
 }
 
-void DataNode_Main()
+int DataNode_Main()
 {
   int i;
+  unsigned char buffer[256];
   
   while(1)
   {
     //========GET COMMAND========//
-    if(TCP_Receive())
+    if(TCP_Receive(buffer))
     {
       if(buffer[0] == 27)
       {
+        if(buffer[1] & 0x80) {
+          Serial.print("(!) Server closed\n");
+          break;
+        }
+
         if(buffer[1] & 0x01) {
-          Sense_Proc(0);
+          Sense_Proc(0, buffer);
+          Serial.print("(!) Sense Proc\n");
         }
         
         if(buffer[1] & 0x02) {
           Light_Proc();
+          Serial.print("(!) Light Proc\n");
         }
         
         //...
@@ -163,7 +182,7 @@ void DataNode_Main()
     }
     
     //=======Sense Proc==========//
-    Sense_Proc(1);
+    Sense_Proc(1, buffer);
     
     //=======Light Proc==========//
     if(isLedOn)
@@ -184,6 +203,7 @@ void DataNode_Main()
       analogWrite(PWM_LED_PIN, 0);
       delay(5000);
     }
-  }  
+  }
+  return 1;
 }
 
