@@ -4,7 +4,7 @@
 > sudo apt-cache search mysql-server
 
 
-![mysql_1](../img/mysql/1.png)
+![mysql_1](../0_1_img/mysql/1.png)
 
 
 ## MySQL 설치
@@ -16,7 +16,7 @@
 > sudo apt-get install mysql-server-5.7
 
 
-![mysql_2](../img/mysql/2.PNG)
+![mysql_2](../0_1_img/mysql/2.PNG)
 
 
 **리눅스에서는 비밀번호 입력할 때 입력하고 있는 글자가 표시되지 않음**
@@ -27,7 +27,7 @@
 > mysql -uroot -p
 
 
-![mysql_3](../img/mysql/3.PNG)
+![mysql_3](../0_1_img/mysql/3.PNG)
 
 
 > exit
@@ -60,7 +60,7 @@
 > SHOW DATABASES;
 
 
-![mysql_4](../img/mysql/4.png)
+![mysql_4](../0_1_img/mysql/4.png)
 
 
 > mysql -uroot -p SensorNode < ~/IoT_MoodLight/nodejs/db/SensorNode.sql
@@ -78,7 +78,7 @@
 > SELECT * FROM Temperature;
 
 
-![mysql_5](../img/mysql/5.png)
+![mysql_5](../0_1_img/mysql/5.png)
 
 
 위 사진처럼 어떤 값이 뜬다면 성공.(테이블 수정 중이라 값의 형태는 그림과 다를 수 있음.)
