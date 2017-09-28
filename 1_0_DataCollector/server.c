@@ -12,6 +12,7 @@
 #include <mysql.h>
 #include <my_global.h>
 #include <time.h>
+
 #define BUF_SIZE 100
 int sig_sock;
 
@@ -132,19 +133,8 @@ int main()
 	//소켓 등록
 	memset(&serv_adr,0,sizeof(serv_adr));
 	serv_adr.sin_family = AF_INET;
-
-	//inet_addr함수 : 000.000.000.000 형식으로 된 문자열을 32비트 숫자값으로 변경해주는 함수...
-	//따라서 "inet_addr(INADDR_ANY);"는 틀린 사용법, 아래 둘 중 하나를 사용해야 함.
-	//serv_adr.sin_addr.s_addr = inet_addr("192.168.0.20");
-	//serv_adr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serv_adr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serv_adr.sin_port=htons(29001);
-
-	//임시...
-	struct linger	ling;
-	ling.l_onoff = 1;
-	ling.l_linger = 0;
-	sepsocketopt(sock,SOL_SOCKET, SO_LINGER, &ling, sizeof(ling));
+	serv_adr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	serv_adr.sin_port=htons(25002);
 
 	//소켓에 주소 등록.
 	if(bind(serv_sock,(struct sockaddr*)&serv_adr,sizeof(serv_adr))==-1)
@@ -196,22 +186,22 @@ int main()
 						if(p_body_data != NULL)
 						{
 							memset(strQuery,0,sizeof(strQuery));
-							Set_DB_User("root","tips20!7");
-							Set_Database("SensorNode");
+							Set_DB_User("root","asdf12");
+							Set_Database("testdb");
 							time(&t);
 							pt = localtime(&t);
 
 							if(message_id ==2)//온도 부분.
 							{
-								sprintf(p_body_data,"INSERT INTO Temperature VALUES(%d,'%d-%d-%d %d:%d:%d',%.2f)",clnt_sock,pt->tm_year+1900,pt->tm_mon+1,pt->tm_mday,pt->tm_hour,pt->tm_min,pt->tm_sec,value);
+								sprintf(strQuery,"INSERT INTO Temperature VALUES(%d,'%d-%d-%d %d:%d:%d',%.2f)",clnt_sock,pt->tm_year+1900,pt->tm_mon+1,pt->tm_mday,pt->tm_hour,pt->tm_min,pt->tm_sec,value);
 								printf("Query : %s \n",strQuery);
 								SendQuery(strQuery);
 
 							}
 							else if(message_id == 4) // 습도 부분.
 							{
+							       sprintf(strQuery,"INSERT INTO Humidity VALUES(%d,'%d-%d-%d %d:%d:%d,%.2f')",clnt_sock,pt->tm_year+1900,pt->tm_mon+1,pt->tm_mday,pt->tm_hour,pt->tm_min,pt->tm_sec,value);
 
-								printf(p_body_data,"INSERT INTO Temperature VALUES(%d,'%d-%d-%d %d:%d:%d,%.2f')",clnt_sock,pt->tm_year+1900,pt->tm_mon+1,pt->tm_mday,pt->tm_hour,pt->tm_min,pt->tm_sec,value);
 								printf("Query : %s \n",strQuery);
 								SendQuery(strQuery);
 							}
