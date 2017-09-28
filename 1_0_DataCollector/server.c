@@ -12,7 +12,8 @@
 #include <mysql.h>
 #include <my_global.h>
 #include <time.h>
-#include <netdb.h>
+#define BUF_SIZE 100
+int sig_sock;
 
 char UserID[16];
 char UserPW[16];
@@ -22,19 +23,17 @@ void finish_with_error(MYSQL *con);
 void Set_DB_User(char *id,char* pw);
 void Set_Database(char *db_name);
 void SendQuery(char* a_query);
-
-int sig_sock;
-#define BUF_SIZE 100
 void finish_with_error(MYSQL *con);
 
-void sig_handler(int sig)
+
+void my_sig_handler(int sig)
 {
 	printf("\nstop service! \n");
 
 	close(sig_sock);
 	exit(1);
 }
-void error_handling(char * message)
+void my_error_handling(char * message)
 {
 	fputs(message,stderr);
 	fputc('\n',stderr);
@@ -47,7 +46,7 @@ int GetFrameData(int a_fd_socket, unsigned char *ap_message_id, char **ap_body_d
 
 	temp_size = read(a_fd_socket, &key, 1);
 	if(temp_size < 0)
-	{                                                                                                         
+	{
 		printf("클라이언트 연결 끊어짐\n");
 	}
 	else if(key == 27)
@@ -115,49 +114,12 @@ int main()
 	unsigned char message_id,body_size;
 	char *p_body_data;
 
+	int tnum =0;
 	double value;
 	char* trash;
 
-	time_t t;
-	struct tm* pt;
-
-	char strQuery[128];
-	//시간 저장
-
-	/*	MYSQL *con = mysql_init(NULL);
-		if (con == NULL)
-		{
-		fprintf(stderr, "%s \n", mysql_error(con));
-		exit(1);
-		}
-	//#user01으로 testdb에 연결
-
-	if (mysql_real_connect(con, "localhost", "user01", "1q2w3e!",
-	"testdb", 0, NULL, 0) == NULL)
-	{
-
-	finish_with_error(con);
-	}*/
-	// 조명 관리, 온도, 습도 테이블 존재하면 제거.
-	//temeperature, Humidity,Light_Management 생성.
-	/*
-	   if (mysql_query(con, "CREATE TABLE Temperature(Node_Number TINYINT,Time DATETIME,Temperature DOUBLE);"))
-	   {
-	   finish_with_error(con);
-	   }
-	   if (mysql_query(con, "CREATE TABLE Humidity(Node_Number TINYINT, Time DATETIME, Humidity DOUBLE);"))
-	   {
-	   finish_with_error(con);
-	   }
-	   if (mysql_query(con, "CREATE TABLE Light(Node_Number TINYINT,Light TINYINT,Time DATETIME,ONOFF CHAR);"))
-	   {
-	   finish_with_error(con);
-	   }
-	 */
-
-
 	//sigaction 함수 부분.
-	act.sa_handler = sig_handler;
+	act.sa_handler = my_sig_handler;
 	sigemptyset(&act.sa_mask);
 	act.sa_flags=0;
 	status = sigaction(SIGINT,&act,NULL);
@@ -170,25 +132,38 @@ int main()
 	//소켓 등록
 	memset(&serv_adr,0,sizeof(serv_adr));
 	serv_adr.sin_family = AF_INET;
-	serv_adr.sin_addr.s_addr = inet_addr(INADDR_ANY);
-	serv_adr.sin_port=htons(25602);
+
+	//inet_addr함수 : 000.000.000.000 형식으로 된 문자열을 32비트 숫자값으로 변경해주는 함수...
+	//따라서 "inet_addr(INADDR_ANY);"는 틀린 사용법, 아래 둘 중 하나를 사용해야 함.
+	//serv_adr.sin_addr.s_addr = inet_addr("192.168.0.20");
+	//serv_adr.sin_addr.s_addr = htonl(INADDR_ANY);
+	serv_adr.sin_addr.s_addr = htonl(INADDR_ANY);
+	serv_adr.sin_port=htons(29001);
+
+	//임시...
+	struct linger	ling;
+	ling.l_onoff = 1;
+	ling.l_linger = 0;
+	sepsocketopt(sock,SOL_SOCKET, SO_LINGER, &ling, sizeof(ling));
 
 	//소켓에 주소 등록.
 	if(bind(serv_sock,(struct sockaddr*)&serv_adr,sizeof(serv_adr))==-1)
-		error_handling("bind function error!");
+		my_error_handling("bind function error!");
 	//리슨 상태
 	if(listen(serv_sock,5)==-1)
-		error_handling("listen function error!");
+		my_error_handling("listen function error!");
 
 	FD_ZERO(&reads);
 	FD_SET(serv_sock,&reads);
 	fd_max = serv_sock;
 
+	char strQuery[128];
+	time_t t;
+	struct tm* pt;
 	//구현
 	while(1)
 	{
-		printf("Waiting for new client \n");
-
+		printf("Waiting for new Client...\n");
 		cpy_reads = reads;
 		timeout.tv_sec = 5;
 		timeout.tv_usec = 5000;
@@ -219,46 +194,49 @@ int main()
 					if(get_msg==1)
 					{
 						if(p_body_data != NULL)
-						{ 
+						{
 							memset(strQuery,0,sizeof(strQuery));
 							Set_DB_User("root","tips20!7");
 							Set_Database("SensorNode");
+							time(&t);
+							pt = localtime(&t);
 
 							if(message_id ==2)//온도 부분.
 							{
-								time(&t);
-								pt = localtime(&t);
 								sprintf(p_body_data,"INSERT INTO Temperature VALUES(%d,'%d-%d-%d %d:%d:%d',%.2f)",clnt_sock,pt->tm_year+1900,pt->tm_mon+1,pt->tm_mday,pt->tm_hour,pt->tm_min,pt->tm_sec,value);
 								printf("Query : %s \n",strQuery);
 								SendQuery(strQuery);
+
 							}
 							else if(message_id == 4) // 습도 부분.
 							{
-								pt = localtime(&t);
-								sprintf(p_body_data,"INSERT INTO Temperature VALUES(%d,'%d-%d-%d %d:%d:%d,%.2f')",clnt_sock,pt->tm_year+1900,pt->tm_mon+1,pt->tm_mday,pt->tm_hour,pt->tm_min,pt->tm_sec,value);
 
+								printf(p_body_data,"INSERT INTO Temperature VALUES(%d,'%d-%d-%d %d:%d:%d,%.2f')",clnt_sock,pt->tm_year+1900,pt->tm_mon+1,pt->tm_mday,pt->tm_hour,pt->tm_min,pt->tm_sec,value);
 								printf("Query : %s \n",strQuery);
 								SendQuery(strQuery);
+							}
+							printf("client : %s \n",p_body_data);
+							free(p_body_data);
 
-							}
 						}
-						else
+					}
+					else
+					{
+						if(get_msg ==-2)
 						{
-							if(get_msg ==-2)
-							{
-								FD_CLR(i,&reads);
-								close(i);
-								printf("close client: %d \n",i);
-								break;
-							}
-						}//else
-					}//read message else
-				}
+							FD_CLR(i,&reads);
+							close(i);
+							printf("close client: %d \n",i);
+							break;
+						}
+					}//else
+				}//read message else
 			}
 		}
-		return 0;
 	}
+	return 0;
 }
+
 void Set_DB_User(char* id, char* pw)
 {
 	memset(UserID, 0, sizeof(UserID));
