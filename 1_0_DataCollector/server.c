@@ -130,12 +130,23 @@ int main()
 	if(serv_sock < 0 )
 		printf("Error in socket function!! \n");
 	sig_sock = serv_sock;
+	
 	//소켓 등록
 	memset(&serv_adr,0,sizeof(serv_adr));
 	serv_adr.sin_family = AF_INET;
-	serv_adr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	serv_adr.sin_port=htons(25002);
-
+ 	serv_adr.sin_addr.s_addr = htonl(INADDR_ANY);
+	//inet_addr함수 : 000.000.000.000 형식으로 된 문자열을 32비트 숫자값으로 변경해주는 함수...
+ 	//따라서 "inet_addr(INADDR_ANY);"는 틀린 사용법, 아래 둘 중 하나를 사용해야 함.
+ 	//serv_adr.sin_addr.s_addr = inet_addr("192.168.0.20");
+ 	//serv_adr.sin_addr.s_addr = htonl(INADDR_ANY);
+ 	serv_adr.sin_port=htons(25602);
+ 
+ 	//임시...
+ 	struct linger	ling;
+ 	ling.l_onoff = 1;
+ 	ling.l_linger = 0;
+ 	sepsocketopt(sock,SOL_SOCKET, SO_LINGER, &ling, sizeof(ling));
+	
 	//소켓에 주소 등록.
 	if(bind(serv_sock,(struct sockaddr*)&serv_adr,sizeof(serv_adr))==-1)
 		my_error_handling("bind function error!");
@@ -200,8 +211,7 @@ int main()
 							}
 							else if(message_id == 4) // 습도 부분.
 							{
-							       sprintf(strQuery,"INSERT INTO Humidity VALUES(%d,'%d-%d-%d %d:%d:%d,%.2f')",clnt_sock,pt->tm_year+1900,pt->tm_mon+1,pt->tm_mday,pt->tm_hour,pt->tm_min,pt->tm_sec,value);
-
+								sprintf(strQuery,"INSERT INTO Humidity VALUES(%d,'%d-%d-%d %d:%d:%d,%.2f')",clnt_sock,pt->tm_year+1900,pt->tm_mon+1,pt->tm_mday,pt->tm_hour,pt->tm_min,pt->tm_sec,value);
 								printf("Query : %s \n",strQuery);
 								SendQuery(strQuery);
 							}
@@ -214,6 +224,7 @@ int main()
 					{
 						if(get_msg ==-2)
 						{
+							SendFrameData(fd_client_socket, 0x80, NULL, 0);
 							FD_CLR(i,&reads);
 							close(i);
 							printf("close client: %d \n",i);
